@@ -1,3 +1,5 @@
+'use server';
+
 import { createClient } from "@/lib/supabase/server";
 
 export async function getBalanceSummary() {
@@ -10,7 +12,7 @@ export async function getBalanceSummary() {
     }
 
 
-    const {totalIncome, totalExpense, savings} = data?.reduce((acc, transaction) => {
+    const {totalIncome, totalExpense, savings} = (data || []).reduce((acc, transaction) => {
         if (transaction.type === 'income') {
             acc.totalIncome += transaction.amount;
         } else if (transaction.type === 'expense') {

@@ -3,15 +3,14 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 -- create table transactions
 CREATE TABLE IF NOT EXISTS public.transactions (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
     category TEXT NOT NULL,
     amount NUMERIC NOT NULL,
     description TEXT,
-    prompt text NOT NULL,
     date DATE NOT NULL DEFAULT CURRENT_DATE,
-    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-    embedding vector(1536) NOT NULL,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    embedding VECTOR(1536),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
