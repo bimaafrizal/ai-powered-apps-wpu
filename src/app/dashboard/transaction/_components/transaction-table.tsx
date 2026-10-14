@@ -1,11 +1,11 @@
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -14,29 +14,37 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { getTransactions } from '@/features/transaction/action';
-import { cn, convertToIDR } from '@/lib/utils';
+} from "@/components/ui/table";
+import { getTransactions } from "@/features/transaction/action";
+import { cn, convertToIDR } from "@/lib/utils";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { PencilIcon, Trash2Icon } from 'lucide-react';
-import { Fragment } from 'react/jsx-runtime';
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { useEffect, useState } from 'react';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/select";
+import { PencilIcon, Trash2Icon } from "lucide-react";
+import { Fragment } from "react/jsx-runtime";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import DeleteTransactionDialog from "./delete-transaction-dialog";
+import { Transaction } from "@/app/types/transaction";
 
 const TABLE_HEADER = [
-  '#',
-  'Date',
-  'Description',
-  'Category',
-  'Amount',
-  'Action',
+  "#",
+  "Date",
+  "Description",
+  "Category",
+  "Amount",
+  "Action",
 ];
 
 export default function TransactionTable({
@@ -60,18 +68,23 @@ export default function TransactionTable({
   isLoading: boolean;
   refetch: () => void;
 }) {
-    const [localSearch, setLocalSearch ] = useState(search)
+  const [localSearch, setLocalSearch] = useState(search);
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (localSearch != search) {
-                setSearch(localSearch);
-                setPage(1);
-            }
-        }, 500);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearch != search) {
+        setSearch(localSearch);
+        setPage(1);
+      }
+    }, 500);
 
-        return () => clearTimeout(timer)
-    })
+    return () => clearTimeout(timer);
+  });
+
+  const [selectedTransaction, setSelectedTransaction] = useState<{
+    data: Omit<Transaction, "user_id" | "embedding">;
+    action: "edit" | "delete";
+  } | null>(null);
 
   return (
     <Fragment>
@@ -82,7 +95,12 @@ export default function TransactionTable({
             <CardDescription>Your latest financial activities.</CardDescription>
           </div>
           <div>
-            <Input placeholder="Search..." value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} className="w-full"/>
+            <Input
+              placeholder="Search..."
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              className="w-full"
+            />
           </div>
         </CardHeader>
         <CardContent>
@@ -106,13 +124,13 @@ export default function TransactionTable({
                     <TableCell>{transaction.category}</TableCell>
                     <TableCell
                       className={cn(
-                        'font-semibold',
-                        transaction.type === 'expense'
-                          ? 'text-destructive'
-                          : 'text-green-500',
+                        "font-semibold",
+                        transaction.type === "expense"
+                          ? "text-destructive"
+                          : "text-green-500",
                       )}
                     >
-                      {transaction.type === 'expense' && '-'}
+                      {transaction.type === "expense" && "-"}
                       {convertToIDR(transaction.amount)}
                     </TableCell>
                     <TableCell className="flex">
@@ -128,7 +146,12 @@ export default function TransactionTable({
                         variant="ghost"
                         size="icon"
                         className="text-muted-foreground hover:text-destructive"
-                        onClick={() => {}}
+                        onClick={() => {
+                          setSelectedTransaction({
+                            data: transaction,
+                            action: "delete",
+                          });
+                        }}
                       >
                         <Trash2Icon className="size-4" />
                       </Button>
@@ -147,7 +170,9 @@ export default function TransactionTable({
           </Table>
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="text-sm text-muted-foreground">Rows per page:</div>
+              <div className="text-muted-foreground text-sm">
+                Rows per page:
+              </div>
               <Select
                 value={limit.toString()}
                 onValueChange={(value) => {
@@ -155,20 +180,20 @@ export default function TransactionTable({
                   setPage(1);
                 }}
               >
-                 <SelectTrigger className="w-20">
+                <SelectTrigger className="w-20">
                   <SelectValue placeholder={limit.toString()} />
                 </SelectTrigger>
                 <SelectContent>
-                    {[1, 5, 10, 20, 50].map((value) => (
-                        <SelectItem key={value} value={value.toString()}>
-                            {value}
-                        </SelectItem>
-                    ))}
+                  {[1, 5, 10, 20, 50].map((value) => (
+                    <SelectItem key={value} value={value.toString()}>
+                      {value}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             {transactions?.totalPages && transactions?.totalPages > 1 ? (
-              <Pagination className="w-auto mx-0">
+              <Pagination className="mx-0 w-auto">
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious
@@ -191,11 +216,16 @@ export default function TransactionTable({
                 </PaginationContent>
               </Pagination>
             ) : (
-              ''
+              ""
             )}
           </div>
         </CardContent>
       </Card>
+      <DeleteTransactionDialog
+        selectedTransaction={selectedTransaction}
+        setSelectedTransaction={setSelectedTransaction}
+        refetch={refetch}
+      />
     </Fragment>
   );
 }
