@@ -40,7 +40,7 @@ export function AppSidebar() {
                     <SidebarMenu>
                         {sidebarItems.map((item) => (
                             <SidebarMenuItem key={item.href}>
-                                <SidebarMenuButton className={cn(
+                                <SidebarMenuButton render={<Link href={item.href} />} className={cn(
                     'py-6 px-5 text-md',
                     pathname === item.href
                       ? 'bg-primary text-primary-foreground font-semibold hover:bg-primary hover:text-primary-foreground'
