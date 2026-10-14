@@ -1,16 +1,17 @@
-'use server';
+"use server";
 
-import { createClient } from '@/lib/supabase/server';
+import { Transaction } from "@/app/types/transaction";
+import { createClient } from "@/lib/supabase/server";
 
 export async function getBalanceSummary() {
   const supabase = await createClient();
 
-  const { data } = await supabase.from('transactions').select('amount, type');
+  const { data } = await supabase.from("transactions").select("amount, type");
 
   const { totalIncome, totalExpense, savings } = (data || []).reduce(
     (acc, tx) => {
-      if (tx.type === 'income') acc.totalIncome += tx.amount;
-      else if (tx.type === 'expense') acc.totalExpense += tx.amount;
+      if (tx.type === "income") acc.totalIncome += tx.amount;
+      else if (tx.type === "expense") acc.totalExpense += tx.amount;
       acc.savings = acc.totalIncome - acc.totalExpense;
       return acc;
     },
@@ -36,13 +37,13 @@ export async function getTransactions(params?: {
   const { limit = 10, page = 1, search } = params || {};
   const supabase = await createClient();
   let query = supabase
-    .from('transactions')
-    .select('id, amount, type, description, date, category', {
-      count: 'exact',
+    .from("transactions")
+    .select("id, amount, type, description, date, category", {
+      count: "exact",
     });
 
   if (search) {
-    query = query.ilike('description', `%${search}%`);
+    query = query.ilike("description", `%${search}%`);
   }
 
   const from = (page - 1) * limit;
@@ -59,4 +60,15 @@ export async function getTransactions(params?: {
     totalData,
     totalPages: Math.ceil(totalData / limit),
   };
+}
+
+export async function createTransaction(
+  payload: Omit<Transaction, "id" | "user_id" | "embedding">,
+) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("transactions").insert(payload);
+
+  if (error) throw new Error(error.message);
+
+  return data;
 }
