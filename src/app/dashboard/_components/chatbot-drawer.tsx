@@ -13,11 +13,14 @@ import {
 } from "@/components/ui/drawer";
 import { handleChat } from "@/features/ai/chat";
 import { cn } from "@/lib/utils";
-import { BotIcon, XIcon } from "lucide-react";
-import { useState } from "react";
+import { BotIcon, EllipsisIcon, XIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import ChatbotTextarea from "./chatbot-textarea";
+import { useMutation } from "@tanstack/react-query";
+import Markdown from "react-markdown";
 
 export default function ChatbotDrawer() {
+  const chatRef = useRef<HTMLDivElement>(null);
   const [conversation, setConversation] = useState<
     {
       role: string;
@@ -25,24 +28,49 @@ export default function ChatbotDrawer() {
         text: string;
       }[];
     }[]
-  >([
-    {
+  >([]);
+
+  const { mutate: handleChatMutation, isPending } = useMutation({
+    mutationFn: handleChat,
+    onSuccess: (response) => {
+      const botMessage = {
+        role: "model",
+        parts: [{ text: response || "terjadi kesalahan" }],
+      };
+      setConversation((prev) => [...prev, botMessage]);
+    },
+    onError: (error) => {
+      const botMessage = {
+        role: "model",
+        parts: [{ text: "terjadi kesalahan: " + error.message }],
+      };
+
+      setConversation((prev) => [...prev, botMessage]);
+    },
+  });
+
+  function sendMessage(message: string) {
+    const newMessage = {
       role: "user",
       parts: [
         {
-          text: "Hello",
+          text: message,
         },
       ],
-    },
-    {
-      role: "model",
-      parts: [
-        {
-          text: "Hello, how can i help you?",
-        },
-      ],
-    },
-  ]);
+    };
+
+    setConversation((prev) => [...prev, newMessage]);
+    handleChatMutation(message);
+  }
+
+  useEffect(() => {
+    if (chatRef.current) {
+      chatRef.current?.scrollTo({
+        top: chatRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [conversation]);
 
   return (
     <Drawer swipeDirection="right" modal={false}>
@@ -57,7 +85,7 @@ export default function ChatbotDrawer() {
       >
         <BotIcon className="size-6" />
       </DrawerTrigger>
-      <DrawerContent className="w-screen! md:w-110!">
+      <DrawerContent className="w-[calc(100vw-2rem)]! rounded-xl! border shadow-lg [--drawer-inset:2rem] md:w-110!">
         <DrawerHeader className="flex flex-row justify-between">
           <div>
             <DrawerTitle className="text-primary font-bold">
@@ -71,9 +99,12 @@ export default function ChatbotDrawer() {
             <XIcon />
           </DrawerClose>
         </DrawerHeader>
-        <div className="no-scrollbar h-full overflow-y-auto px-4">
+        <div className="no-scrollbar mt-5 h-full overflow-y-auto px-4">
           {conversation.length > 0 ? (
-            <div className="no-scrollbar flex h-full flex-col gap-8 overflow-x-hidden overflow-y-auto">
+            <div
+              ref={chatRef}
+              className="no-scrollbar flex h-full flex-col gap-8 overflow-x-hidden overflow-y-auto"
+            >
               {conversation.map((message, index) => (
                 <div
                   key={`conversation-${index}`}
@@ -94,10 +125,21 @@ export default function ChatbotDrawer() {
                         AI Advisor
                       </div>
                     )}
-                    {message.parts[0].text}
+                    {message.role == "model" ? (
+                      <div className="response-ai">
+                        <Markdown>{message.parts[0].text}</Markdown>
+                      </div>
+                    ) : (
+                      message.parts[0].text
+                    )}
                   </div>
                 </div>
               ))}
+              {isPending && (
+                <div className="flex animate-pulse items-center">
+                  <EllipsisIcon className="text-primary size-8 opacity-25" />
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex h-full flex-col items-center justify-center">
@@ -107,7 +149,7 @@ export default function ChatbotDrawer() {
           )}
         </div>
         <DrawerFooter>
-          <ChatbotTextarea />
+          <ChatbotTextarea sendMessage={sendMessage} />
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

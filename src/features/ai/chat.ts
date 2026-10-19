@@ -10,13 +10,12 @@ const ai = new GoogleGenAI({
   apiKey: apiKey,
 });
 
-export async function handleChat() {
+export async function handleChat(message: string) {
   const response = await ai.models.generateContent({
     model: aiModel,
-    contents: "km siapa yhh",
+    contents: message,
     config: {},
   });
 
-  console.log(response);
   return response.text ?? "";
 }
