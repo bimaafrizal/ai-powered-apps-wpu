@@ -63,6 +63,11 @@ export async function* handleChatWithStream(
         includeThoughts: isThinking,
         // thinkingLevel: isThinking ? ThinkingLevel.HIGH : ThinkingLevel.LOW,
       },
+      systemInstruction: `Kamu adalah seorang financial advisor yang akan menjawab pertanyaan user`,
+      // sampling params
+      temperature: 0.2,
+      topK: 5,
+      topP: 0.9,
     },
   });
 
