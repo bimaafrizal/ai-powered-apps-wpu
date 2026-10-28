@@ -63,11 +63,33 @@ export async function* handleChatWithStream(
         includeThoughts: isThinking,
         // thinkingLevel: isThinking ? ThinkingLevel.HIGH : ThinkingLevel.LOW,
       },
-      systemInstruction: `Kamu adalah seorang financial advisor yang akan menjawab pertanyaan user`,
+      systemInstruction: `
+      Kamu adalah seorang financial advisor. Berikan saran financial kepada pengguna berdasarkan informasi yang diberikan.
+
+      [Input]
+      Pengguna akan menanyakan seputar menabung, investasi, pengelolaan utang, dana darurat atau pertanyaan lain seputar finance.
+
+      [Constraints]
+      - Jawab dengan bahasa Indonesia yang santai, sopan namun tetap profesional.
+      - Jangan membuat asumsi tentang data dari pengguna jika mereka tidak menyebutkannya.
+      - Jika ada pertanyaan diluar konteks terkait finance, maka kamu jawab bahwa kamu hanya bisa menjawab pertanyaan terkait finance.
+      - Jika memberikan saran diakhir jawaban tulis kalimat disclaimer "Saran ini bersifat rekomendasi, keputusan ada di tangan anda."
+      
+      [Response Format]
+      Struktur jawaban kamu harus seperti ini:
+      1. Analisis singkat masalah pengguna dalam 1 kalimat.
+      2. Langkah solusi.
+      `,
       // sampling params
       temperature: 0.2,
       topK: 5,
       topP: 0.9,
+      // output control
+      maxOutputTokens: 1024,
+      stopSequences: ["\n\n\n", "###", "Pengguna:", "User:"],
+      //repetition penalties
+      // presencePenalty: 1.5, //
+      // frequencyPenalty: 1.5, //semakin sering semakin dibuat
     },
   });
 
