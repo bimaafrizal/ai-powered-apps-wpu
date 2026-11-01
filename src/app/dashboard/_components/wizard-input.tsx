@@ -4,18 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { handleWizardInput } from "@/features/ai/chat";
+import { createTransaction } from "@/features/transaction/action";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Loader2Icon, SendIcon, SparklesIcon } from "lucide-react";
 import { KeyboardEvent } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { toast } from "sonner";
 import z from "zod";
 
 const formSchema = z.object({
   message: z.string().min(1, "Message is required"),
 });
 
-export default function WizardInput() {
+export default function WizardInput({ refetch }: { refetch: () => void }) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -24,13 +26,26 @@ export default function WizardInput() {
   });
 
   const { mutate, isPending } = useMutation({
-    mutationFn: handleWizardInput,
+    mutationFn: async (message: string) => {
+      const response = await handleWizardInput(message);
+
+      if (!response) {
+        throw new Error("Failed to get AI response");
+      }
+
+      return createTransaction(response);
+    },
     onSuccess: (data) => {
-      console.log("AI Response:", data);
+      toast.success("Transaction created successfully");
+      refetch();
       form.reset();
     },
     onError: (error) => {
-      console.error("Error:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to process your transaction",
+      );
     },
   });
 
