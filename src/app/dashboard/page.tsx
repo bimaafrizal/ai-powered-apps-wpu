@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { BalanceCards } from "./_components/balance-cards";
+import DashboardContent from "./_components/dashbaord-content";
 
 export const metadata: Metadata = {
   title: "Fina",
@@ -8,14 +8,12 @@ export const metadata: Metadata = {
 
 export default function DashboardPage() {
   return (
-    <main className="p-2 space-y-4">
+    <main className="space-y-4 p-2">
       <section id="header">
-        <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
+        <h1 className="text-primary text-2xl font-bold">Dashboard</h1>
         <p>Get insight into your financial health.</p>
       </section>
-       <section id="content">
-        <BalanceCards />
-      </section>
+      <DashboardContent />
     </main>
   );
 }

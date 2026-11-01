@@ -3,6 +3,7 @@
 import { Conversation } from "@/app/types/ai";
 import { ENVIRONMENT } from "@/config/environment";
 import { GoogleGenAI, ThinkingLevel } from "@google/genai";
+import { createAI } from "./instance";
 
 const apiKey = ENVIRONMENT.GOOGLE_API_KEY;
 const aiModel = ENVIRONMENT.AI_MODEL ?? "gemini-2.0-flash";
@@ -15,8 +16,9 @@ export async function handleChat(
   conversation: Conversation[],
   isThinking: boolean,
 ) {
+  const ai = createAI();
   const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+    model: aiModel,
     contents: [...conversation],
     config: {
       thinkingConfig: {
@@ -55,6 +57,7 @@ export async function* handleChatWithStream(
   conversation: Conversation[],
   isThinking: boolean,
 ) {
+  const ai = createAI();
   const response = await ai.models.generateContentStream({
     model: aiModel,
     contents: [...conversation],
@@ -150,4 +153,16 @@ export async function* handleChatWithStream(
       }
     }
   }
+}
+
+export async function handleWizardInput(message: string) {
+  const contents = `${message}`;
+  const ai = createAI();
+  const response = await ai.models.generateContent({
+    model: aiModel,
+    contents,
+    config: {},
+  });
+
+  return response.text;
 }
