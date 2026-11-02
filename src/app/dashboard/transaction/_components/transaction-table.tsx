@@ -119,7 +119,7 @@ export default function TransactionTable({
                   <TableRow key={`tr-${transaction.id}`}>
                     <TableCell>{(page - 1) * limit + index + 1}</TableCell>
                     <TableCell className="font-medium">
-                      {new Date(transaction.date).toLocaleDateString()}
+                      {transaction.date}
                     </TableCell>
                     <TableCell>{transaction.description}</TableCell>
                     <TableCell>{transaction.category}</TableCell>

@@ -34,10 +34,6 @@ export default function WizardInput({ refetch }: { refetch: () => void }) {
         throw new Error("Failed to get AI response");
       }
 
-      const embedding = await generateEmbedding(JSON.stringify(response));
-      console.log("Embedding generated:", embedding);
-      // return;
-
       return createTransaction(response);
     },
     onSuccess: (data) => {

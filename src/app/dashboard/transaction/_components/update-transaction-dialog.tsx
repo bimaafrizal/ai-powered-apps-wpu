@@ -28,7 +28,7 @@ import { updateTransaction } from "@/features/transaction/action";
 import { convertToIDR } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { Dispatch, SetStateAction, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -109,7 +109,10 @@ export default function UpdateTransactionDialog({
         amount: String(selectedTransaction.data.amount),
         type: selectedTransaction.data.type,
         category: selectedTransaction.data.category,
-        date: String(selectedTransaction.data.date),
+        date: format(
+          parse(String(selectedTransaction.data.date), "dd-MM-yyyy", new Date()),
+          "yyyy-MM-dd",
+        ),
         description: selectedTransaction.data.description,
       });
     }
