@@ -2,8 +2,6 @@
 
 import { ENVIRONMENT } from "@/config/environment";
 import { createAI } from "./instance";
-import { Conversation } from "@/app/types/ai";
-import { createClient } from "@supabase/supabase-js";
 
 export async function generateEmbedding(contents: string) {
   const ai = createAI();
@@ -29,17 +27,4 @@ export async function generateEmbedding(contents: string) {
   } catch (error) {
     throw error;
   }
-}
-
-export async function retriveEmbedding(
-  query: string,
-  historyChat?: Conversation[],
-  isThinking?: boolean,
-) {
-  const ai = createAI();
-
-  const supabase = await createClient;
-
-  try {
-  } catch (error) {}
 }

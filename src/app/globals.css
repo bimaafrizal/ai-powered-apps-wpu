@@ -171,6 +171,15 @@
 
   ul {
     @apply w-full space-y-1 text-wrap;
+    li {
+      @apply list-inside list-disc text-wrap;
+      ul {
+        list-style-type: circle;
+        li {
+          @apply ml-2 list-inside text-wrap;
+        }
+      }
+    }
   }
 
   li {

@@ -11,7 +11,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import { handleChat, handleChatWithStream } from "@/features/ai/chat";
+import { handleChatWithStream } from "@/features/ai/chat";
 import { cn } from "@/lib/utils";
 import { BotIcon, ChevronDownIcon, EllipsisIcon, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -76,7 +76,11 @@ export default function ChatbotDrawer() {
           { role: "model", parts: [{ thought: true, text: "" }, { text: "" }] },
         ]);
 
-        const response = await handleChatWithStream(conversation, isThinking);
+        const response = await handleChatWithStream(
+          conversation,
+          isThinking,
+          "general",
+        );
         for await (const chunk of response) {
           setConversation((prev) => {
             const newConversation = [...prev];
@@ -109,7 +113,11 @@ export default function ChatbotDrawer() {
           { role: "model", parts: [{ text: "" }] },
         ]);
 
-        const response = await handleChatWithStream(conversation, isThinking);
+        const response = await handleChatWithStream(
+          conversation,
+          isThinking,
+          "personalized",
+        );
         for await (const chunk of response) {
           setConversation((prev) => {
             const newConversation = [...prev];
