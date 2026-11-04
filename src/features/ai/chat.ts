@@ -61,7 +61,7 @@ async function generalChat(conversation: Conversation[], isThinking?: boolean) {
     config: {
       thinkingConfig: {
         includeThoughts: isThinking,
-        // thinkingLevel: isThinking ? ThinkingLevel.HIGH : ThinkingLevel.LOW,
+        thinkingLevel: isThinking ? ThinkingLevel.HIGH : ThinkingLevel.LOW,
       },
       systemInstruction: `
       [Role]
@@ -212,6 +212,7 @@ async function personalizedChat(
     config: {
       thinkingConfig: {
         includeThoughts: isThinking,
+        thinkingLevel: isThinking ? ThinkingLevel.HIGH : ThinkingLevel.LOW,
       },
     },
   });

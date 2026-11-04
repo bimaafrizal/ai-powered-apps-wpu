@@ -29,58 +29,23 @@ export default function ChatbotDrawer() {
   const chatRef = useRef<HTMLDivElement>(null);
   const [conversation, setConversation] = useState<Conversation[]>([]);
   const [isThinking, setIsthinking] = useState<boolean>(false);
-
-  // const { mutate: handleChatMutation, isPending } = useMutation({
-  //   mutationFn: ({
-  //     message,
-  //     isThinking,
-  //   }: {
-  //     message: string;
-  //     isThinking: boolean;
-  //   }) => handleChat(message, isThinking),
-  //   onSuccess: (response) => {
-  //     let parts: {
-  //       text: string;
-  //       thought?: boolean;
-  //     }[] = [];
-
-  //     if (response?.thought !== "") {
-  //       parts = [
-  //         ...parts,
-  //         { thought: true, text: response?.thought || "Terjadi kesalahan" },
-  //       ];
-  //     }
-
-  //     const botMessage = {
-  //       role: "model",
-  //       parts: [...parts, { text: response?.answer || "Terjadi kesalahan" }],
-  //     };
-
-  //     setConversation((prev) => [...prev, botMessage]);
-  //   },
-  //   onError: (error) => {
-  //     const botMessage = {
-  //       role: "model",
-  //       parts: [{ text: "terjadi kesalahan: " + error.message }],
-  //     };
-
-  //     setConversation((prev) => [...prev, botMessage]);
-  //   },
-  // });
+  const [mode, setMode] = useState<"general" | "personalized">("general");
 
   const { mutate: handleChatMutation, isPending } = useMutation({
-    mutationFn: async ({ isThinking }: { isThinking: boolean }) => {
+    mutationFn: async ({
+      isThinking,
+      history,
+    }: {
+      isThinking: boolean;
+      history: Conversation[];
+    }) => {
       if (isThinking) {
         setConversation((prev) => [
           ...prev,
           { role: "model", parts: [{ thought: true, text: "" }, { text: "" }] },
         ]);
 
-        const response = await handleChatWithStream(
-          conversation,
-          isThinking,
-          "general",
-        );
+        const response = await handleChatWithStream(history, isThinking, mode);
         for await (const chunk of response) {
           setConversation((prev) => {
             const newConversation = [...prev];
@@ -113,11 +78,7 @@ export default function ChatbotDrawer() {
           { role: "model", parts: [{ text: "" }] },
         ]);
 
-        const response = await handleChatWithStream(
-          conversation,
-          isThinking,
-          "personalized",
-        );
+        const response = await handleChatWithStream(history, isThinking, mode);
         for await (const chunk of response) {
           setConversation((prev) => {
             const newConversation = [...prev];
@@ -156,8 +117,9 @@ export default function ChatbotDrawer() {
       ],
     };
 
-    setConversation((prev) => [...prev, newMessage]);
-    handleChatMutation({ isThinking: isThinking });
+    const history = [...conversation, newMessage];
+    setConversation(history);
+    handleChatMutation({ isThinking, history });
   }
 
   useEffect(() => {
@@ -182,7 +144,7 @@ export default function ChatbotDrawer() {
       >
         <BotIcon className="size-6" />
       </DrawerTrigger>
-      <DrawerContent className="w-[calc(100vw-2rem)]! rounded-xl! border shadow-lg [--drawer-inset:2rem] md:w-110!">
+      <DrawerContent className="w-[calc(100vw-2*var(--drawer-inset))]! rounded-xl! border-2! shadow-lg [--drawer-inset:1rem] md:w-110! md:[--drawer-inset:2rem]">
         <DrawerHeader className="flex flex-row justify-between">
           <div>
             <DrawerTitle className="text-primary font-bold">
@@ -227,6 +189,7 @@ export default function ChatbotDrawer() {
                         {message.parts.map((part, indexPart) => (
                           <div key={`response-ai-${index}-${indexPart}`}>
                             {part.thought ? (
+                              part.text && (
                               <Collapsible>
                                 <CollapsibleTrigger
                                   render={<Button variant="ghost" />}
@@ -240,6 +203,7 @@ export default function ChatbotDrawer() {
                                   </div>
                                 </CollapsibleContent>
                               </Collapsible>
+                              )
                             ) : (
                               <Markdown>{part.text}</Markdown>
                             )}
@@ -270,6 +234,8 @@ export default function ChatbotDrawer() {
             isThinking={isThinking}
             setIsThinking={setIsthinking}
             sendMessage={sendMessage}
+            mode={mode}
+            setMode={setMode}
           />
         </DrawerFooter>
       </DrawerContent>

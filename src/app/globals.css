@@ -146,15 +146,15 @@
   }
 
   h1 {
-    @apply text-3xl;
-  }
-
-  h2 {
     @apply text-2xl;
   }
 
-  h3 {
+  h2 {
     @apply text-xl;
+  }
+
+  h3 {
+    @apply text-lg;
   }
 
   h4 {
@@ -167,6 +167,10 @@
 
   h6 {
     @apply text-xs;
+  }
+
+  hr {
+    @apply border-t-0! border-b-2! pt-4;
   }
 
   ul {
