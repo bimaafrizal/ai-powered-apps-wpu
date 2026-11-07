@@ -2,6 +2,6 @@ export const ENVIRONMENT = {
   SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
-  AI_MODEL: process.env.AI_MODEL,
-  AI_EMBEDDING_MODEL: process.env.AI_EMBEDDING_MODEL,
+  AI_MODEL: process.env.AI_MODEL ?? "gemini-2.0-flash",
+  AI_EMBEDDING_MODEL: process.env.AI_EMBEDDING_MODEL ?? "gemini-embedding-2",
 };
