@@ -5,7 +5,11 @@ import { createAI } from "./instance";
 import { format } from "date-fns";
 import { ENVIRONMENT } from "@/config/environment";
 import { FunctionDeclaration, Type } from "@google/genai";
-import { createTransaction, deleteTransaction } from "../transaction/action";
+import {
+  createTransaction,
+  deleteTransaction,
+  updateTransaction,
+} from "../transaction/action";
 import { findEmbedding } from "./embedding";
 
 const transactionSchema = z.object({
@@ -158,6 +162,7 @@ export async function handleWizardTools(message: string) {
           functionDeclarations: [
             createTransactionDeclaration,
             deleteTransactionDeclaration,
+            updateTransactionDeclaration,
           ],
         },
       ],
@@ -182,9 +187,34 @@ export async function handleWizardTools(message: string) {
             break;
           case "delete_transaction":
             const data = await findEmbedding(JSON.stringify(args), 0.9, 1);
+            if (data.length === 0) {
+              throw new Error(
+                "No transactions found that are similar or relevant",
+              );
+            }
             const deletedData = data[0];
             await deleteTransaction(deletedData.id);
             break;
+          case "update_transaction":
+            const dataFindForUpdate = await findEmbedding(
+              JSON.stringify(args),
+              0.3,
+              1,
+            );
+            const updateData = dataFindForUpdate[0];
+            const newData = transactionSchema.parse(args);
+            if (newData.amount === undefined || newData.amount <= 0) {
+              throw new Error("Cannot update transaction with invalid amount");
+            }
+
+            if (newData.amount <= 0) {
+              throw new Error("Cannot update transaction with invalid amount");
+            }
+
+            await updateTransaction(updateData.id, newData);
+
+            break;
+
           default:
             throw new Error(`Unknown function call`);
         }
@@ -206,5 +236,15 @@ const deleteTransactionDeclaration: FunctionDeclaration = {
     type: Type.OBJECT,
     properties: transactionProperties,
     required: ["id"],
+  },
+};
+
+const updateTransactionDeclaration: FunctionDeclaration = {
+  name: "update_transaction",
+  description:
+    "Update an existing transaction from user's financial history based on the provided data.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: transactionProperties,
   },
 };

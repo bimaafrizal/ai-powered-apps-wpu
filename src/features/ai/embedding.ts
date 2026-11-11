@@ -35,8 +35,6 @@ export async function findEmbedding(
   match_threshold?: number,
   match_count?: number,
 ) {
-  const ai = createAI();
-
   const supabase = await createClient();
 
   // embeding first before query
@@ -52,9 +50,5 @@ export async function findEmbedding(
     throw new Error(`Failed to perform vector search: ${error.message}`);
   }
 
-  if (!data || data.length === 0) {
-    throw new Error("No transactions found that are similar or relevant");
-  }
-
-  return data;
+  return data ?? [];
 }

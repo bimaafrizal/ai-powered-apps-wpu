@@ -150,7 +150,9 @@ async function personalizedChat(
 ) {
   const ai = createAI();
 
-  const data = await findEmbedding(query);
+  // Threshold lebih rendah & count lebih besar: pertanyaan natural language
+  // jarang punya similarity tinggi dengan teks JSON transaksi.
+  const data = await findEmbedding(query, 0.5, 30);
 
   let contextData = "";
   if (!data || data.length === 0) {
@@ -170,6 +172,7 @@ async function personalizedChat(
       their financial data using the RAG (Retrieval-Augmented Generation) technique.
     </role>
     <input>
+      Today's date: ${new Date().toISOString().slice(0, 10)}
       User Question: "${query}"
     </input>
     <context>
