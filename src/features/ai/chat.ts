@@ -6,7 +6,7 @@ import { ThinkingLevel } from "@google/genai";
 import { createAI } from "./instance";
 import { Transaction } from "@/app/types/transaction";
 import { createClient } from "@/lib/supabase/server";
-import { generateEmbedding } from "./embedding";
+import { findEmbedding, generateEmbedding } from "./embedding";
 
 const aiModel = ENVIRONMENT.AI_MODEL;
 
@@ -150,20 +150,7 @@ async function personalizedChat(
 ) {
   const ai = createAI();
 
-  const supabase = await createClient();
-
-  // embeding first before query
-  const queryEmbedding = await generateEmbedding(query);
-
-  const { data, error } = await supabase.rpc("match_transactions", {
-    query_embedding: queryEmbedding,
-    match_threshold: 0.3,
-    match_count: 15,
-  });
-
-  if (error) {
-    throw new Error(`Failed to perform vector search: ${error.message}`);
-  }
+  const data = await findEmbedding(query);
 
   let contextData = "";
   if (!data || data.length === 0) {
