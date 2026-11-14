@@ -4,13 +4,19 @@ import z from "zod";
 import { createAI } from "./instance";
 import { format } from "date-fns";
 import { ENVIRONMENT } from "@/config/environment";
-import { FunctionDeclaration, Type } from "@google/genai";
 import {
   createTransaction,
   deleteTransaction,
   updateTransaction,
 } from "../transaction/action";
 import { findEmbedding } from "./embedding";
+import {
+  createTransactionDeclaration,
+  deleteTransactionDeclaration,
+  getTransactionDeclaration,
+  updateTransactionDeclaration,
+} from "./functionTransaction";
+import { Content } from "@google/genai";
 
 const transactionSchema = z.object({
   amount: z.number().default(0).describe("Transaction nominal"),
@@ -88,62 +94,21 @@ export async function handleWizardInput(message: string) {
   return transaction;
 }
 
-const transactionProperties = {
-  id: {
-    type: Type.STRING,
-    description: "The unique identifier for the transaction",
-  },
-  amount: {
-    type: Type.NUMBER,
-    description: "The amount of the transaction",
-  },
-  type: {
-    type: Type.STRING,
-    enum: ["income", "expense"],
-    description: 'The type of the transaction, either "income" or "expense"',
-  },
-  category: {
-    type: Type.STRING,
-    enum: [
-      "Food & Drink",
-      "Shopping",
-      "Housing",
-      "Transportation",
-      "Entertainment",
-      "Salary",
-      "Others",
-    ],
-    description: "The category of the transaction",
-  },
-  description: {
-    type: Type.STRING,
-    description: "A brief description of the transaction",
-  },
-  date: {
-    type: Type.STRING,
-    description: 'The date of the transaction in the format "YYYY-MM-DD"',
-  },
-};
-
-// function declaration
-const createTransactionDeclaration: FunctionDeclaration = {
-  name: "create_transaction",
-  description:
-    "Create a new transaction in the user's financial history based on the provided message.",
-  parameters: {
-    type: Type.OBJECT,
-    properties: transactionProperties,
-    required: ["amount", "description", "type", "category", "date"],
-  },
-};
-
 export async function handleWizardTools(message: string) {
-  const contents = `
+  const contents: Content[] = [
+    {
+      role: "user",
+      parts: [
+        {
+          text: `
     <role>
         You are an AI Wizard finance assitant, who can extract transaction details from text.
     </role>
     <instruction>
-        Extract the transaction details from the following text.
+        - Extract the transaction details from the following text.
+        - If request is to update or delete transaction, you must call function get_transaction first to find out which transaction will be updated or deleted.
+        - When update transaction, args must return from get_transaction before with fully like in schema.
+        - The final response if there are no more functions being called is as simple as possible.
     </instruction>
     <context>
         Current Date : ${new Date().toISOString()}
@@ -151,100 +116,111 @@ export async function handleWizardTools(message: string) {
     <input>
         Text to extract: ${message}
     </input>
-  `;
-  const ai = createAI();
-  const response = await ai.models.generateContent({
-    model: "gemini-3.5-flash",
-    contents,
-    config: {
-      tools: [
-        {
-          functionDeclarations: [
-            createTransactionDeclaration,
-            deleteTransactionDeclaration,
-            updateTransactionDeclaration,
-          ],
+  `,
         },
       ],
     },
-  });
+  ];
 
-  if (response.functionCalls && response.functionCalls.length > 0) {
-    await Promise.all(
-      response.functionCalls.map(async (functionCall) => {
-        const args = functionCall.args;
-        if (!args) {
-          throw new Error("No arguments provided");
-        }
+  let iterate = 1;
+  const ai = createAI();
+  let running = true;
+  while (running) {
+    console.log(`iterate: ${iterate}`);
+    console.log(contents);
+    iterate++;
+    const response = await ai.models.generateContent({
+      model: ENVIRONMENT.AI_MODEL,
+      contents,
+      config: {
+        tools: [
+          {
+            functionDeclarations: [
+              getTransactionDeclaration,
+              createTransactionDeclaration,
+              deleteTransactionDeclaration,
+              updateTransactionDeclaration,
+            ],
+          },
+        ],
+      },
+    });
 
-        switch (functionCall.name) {
-          case "create_transaction":
-            const transaction = transactionSchema.parse(args);
-            if (transaction.amount <= 0) {
-              throw new Error("Cannot create transaction with invalid amount");
-            }
-            await createTransaction(transaction);
-            break;
-          case "delete_transaction":
-            const data = await findEmbedding(JSON.stringify(args), 0.9, 1);
-            if (data.length === 0) {
-              throw new Error(
-                "No transactions found that are similar or relevant",
+    if (response.functionCalls && response.functionCalls.length > 0) {
+      console.log("function call: ");
+      console.log(response.functionCalls);
+
+      if (response.candidates && response.candidates[0]?.content) {
+        contents.push(response.candidates[0].content);
+      }
+
+      const functionResponseParts = await Promise.all(
+        response.functionCalls.map(async (functionCall) => {
+          const { name, args, id } = functionCall;
+          if (!args) {
+            throw new Error("No arguments provided");
+          }
+
+          let resultData = {};
+
+          switch (name) {
+            case "get_transaction":
+              const dataFind = await findEmbedding(
+                JSON.stringify(args),
+                0.3,
+                5,
               );
-            }
-            const deletedData = data[0];
-            await deleteTransaction(deletedData.id);
-            break;
-          case "update_transaction":
-            const dataFindForUpdate = await findEmbedding(
-              JSON.stringify(args),
-              0.3,
-              1,
-            );
-            const updateData = dataFindForUpdate[0];
-            const newData = transactionSchema.parse(args);
-            if (newData.amount === undefined || newData.amount <= 0) {
-              throw new Error("Cannot update transaction with invalid amount");
-            }
+              resultData = dataFind[0] || {};
+              break;
+            case "create_transaction":
+              const transaction = transactionSchema.parse(args);
+              if (transaction.amount <= 0) {
+                throw new Error(
+                  "Cannot create transaction with invalid amount",
+                );
+              }
+              await createTransaction(transaction);
+              break;
+            case "delete_transaction":
+              await deleteTransaction(`${args.id}`);
+              break;
+            case "update_transaction":
+              const newData = transactionSchema.parse(args);
+              if (newData.amount === undefined || newData.amount <= 0) {
+                throw new Error(
+                  "Cannot update transaction with invalid amount",
+                );
+              }
 
-            if (newData.amount <= 0) {
-              throw new Error("Cannot update transaction with invalid amount");
-            }
+              if (newData.amount <= 0) {
+                throw new Error(
+                  "Cannot update transaction with invalid amount",
+                );
+              }
 
-            await updateTransaction(updateData.id, newData);
+              await updateTransaction(`${args.id}`, newData);
+              break;
+            default:
+              throw new Error(`Unknown function call`);
+          }
 
-            break;
+          return {
+            functionResponse: {
+              name,
+              response: { result: resultData },
+              id,
+            },
+          };
+        }),
+      );
 
-          default:
-            throw new Error(`Unknown function call`);
-        }
-      }),
-    );
-
-    return "Function executed successfully";
-  } else {
-    throw new Error("AI did not call any function");
+      contents.push({
+        role: "user",
+        parts: functionResponseParts,
+      });
+    } else {
+      running = false;
+      return response.text;
+    }
   }
 }
-
-// delete transaction
-const deleteTransactionDeclaration: FunctionDeclaration = {
-  name: "delete_transaction",
-  description:
-    "Delete an existing transaction from user's financial history based on the provided data.",
-  parameters: {
-    type: Type.OBJECT,
-    properties: transactionProperties,
-    required: ["id"],
-  },
-};
-
-const updateTransactionDeclaration: FunctionDeclaration = {
-  name: "update_transaction",
-  description:
-    "Update an existing transaction from user's financial history based on the provided data.",
-  parameters: {
-    type: Type.OBJECT,
-    properties: transactionProperties,
-  },
-};

@@ -173,12 +173,19 @@
     @apply border-t-0! border-b-2! pt-4;
   }
 
+  ol {
+    @apply w-full list-decimal space-y-1;
+    li {
+      @apply list-inside list-disc text-wrap;
+    }
+  }
+
   ul {
-    @apply w-full space-y-1 text-wrap;
+    @apply w-full list-disc space-y-1 text-wrap;
     li {
       @apply list-inside list-disc text-wrap;
       ul {
-        list-style-type: circle;
+        list-style-type: circle !important;
         li {
           @apply ml-2 list-inside text-wrap;
         }
