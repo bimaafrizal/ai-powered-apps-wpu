@@ -135,6 +135,11 @@ async function generalChat(conversation: Content[], isThinking?: boolean) {
       // output control
       maxOutputTokens: 2048,
       stopSequences: ["\n\n\n", "###", "Pengguna:", "User:"],
+      // tools: [
+      //   {
+      //     googleSearch: {},
+      //   },
+      // ],
       //repetition penalties
       // presencePenalty: 1.5, //
       // frequencyPenalty: 1.5, //semakin sering semakin dibuat
