@@ -138,6 +138,7 @@ async function generalChat(conversation: Content[], isThinking?: boolean) {
       // tools: [
       //   {
       //     googleSearch: {},
+      //     urlContext: {},
       //   },
       // ],
       //repetition penalties
@@ -251,7 +252,16 @@ export async function* handleChatWithStream(
         model: aiModel,
         contents: contents,
         config: {
-          tools: [{ functionDeclarations: [getTransactionDeclaration] }],
+          tools: [
+            {
+              // googleSearch: {},
+              // urlContext: {},
+              functionDeclarations: [getTransactionDeclaration],
+            },
+          ],
+          // toolConfig: {
+          //   includeServerSideToolInvocations: true,
+          // },
           thinkingConfig: {
             includeThoughts: isThinking,
             thinkingLevel: isThinking ? ThinkingLevel.HIGH : ThinkingLevel.LOW,
