@@ -15,7 +15,7 @@ import {
   deleteTransactionDeclaration,
   getTransactionDeclaration,
   updateTransactionDeclaration,
-} from "./functionTransaction";
+} from "./function-transaction";
 import { Content } from "@google/genai";
 
 const transactionSchema = z.object({

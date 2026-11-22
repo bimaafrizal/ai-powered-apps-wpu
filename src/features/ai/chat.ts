@@ -7,7 +7,7 @@ import { createAI } from "./instance";
 import { Transaction } from "@/app/types/transaction";
 import { createClient } from "@/lib/supabase/server";
 import { findEmbedding, generateEmbedding } from "./embedding";
-import { getTransactionDeclaration } from "./functionTransaction";
+import { getTransactionDeclaration } from "./function-transaction";
 
 const aiModel = ENVIRONMENT.AI_MODEL;
 
