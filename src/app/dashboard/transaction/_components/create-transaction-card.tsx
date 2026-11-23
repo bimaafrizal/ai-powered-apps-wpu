@@ -30,6 +30,7 @@ import { createTransaction } from "@/features/transaction/action";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { convertToIDR } from "@/lib/utils";
+import FileDropzoneInput from "../../_components/file-dropzone-input";
 
 const formSchema = z.object({
   amount: z.string().min(1, "Amount is required"),
@@ -109,6 +110,9 @@ export default function CreateTransactionCard({
         <CardDescription>Add a new financial activity.</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="mb-6">
+          <FileDropzoneInput setValues={form.setValue} refetch={refetch} />
+        </div>
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <FieldGroup className="gap-3">
             <Controller
